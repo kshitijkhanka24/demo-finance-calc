@@ -1,136 +1,94 @@
-'use client';
+'use client'
 
-import { useState } from 'react';
-import Header from '@/components/header';
-import CalculatorCard from '@/components/calculator-card';
-import ResultsTable from '@/components/results-table';
-import CorpusChart from '@/components/corpus-chart';
-import PopularCalculators from '@/components/popular-calculators';
-import SIPInfo from '@/components/sip-info';
+import Link from 'next/link'
+import { ArrowRight, Calculator, BarChart3, Download, Shield } from 'lucide-react'
+import { calculatorsList } from '@/lib/data'
 
 export default function Home() {
-  const [monthlyInvestment, setMonthlyInvestment] = useState(5000);
-  const [rateOfReturn, setRateOfReturn] = useState(6);
-  const [timePeriod, setTimePeriod] = useState(5);
-  const [results, setResults] = useState<any[]>([]);
-
-  const calculateSIP = () => {
-    const monthlyRate = rateOfReturn / 12 / 100;
-    const months = timePeriod * 12;
-    let principal = 0;
-    let corpus = 0;
-    const yearlyData = [];
-
-    for (let month = 1; month <= months; month++) {
-      principal += monthlyInvestment;
-      corpus = monthlyInvestment * (((1 + monthlyRate) ** month - 1) / monthlyRate);
-
-      if (month % 12 === 0) {
-        yearlyData.push({
-          year: month / 12,
-          investment: Math.round(principal),
-          interest: Math.round(corpus - principal),
-          corpus: Math.round(corpus),
-        });
-      }
-    }
-
-    setResults(yearlyData);
-  };
-
-  const totalInvestment = Math.round(monthlyInvestment * timePeriod * 12);
-  const totalCorpus = results[results.length - 1]?.corpus || 0;
-  const totalInterest = totalCorpus - totalInvestment;
-
   return (
-    <main className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-blue-100">
-      <Header />
-
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
-        {/* Hero Section */}
-        <div className="mb-12 text-center">
-          <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-2">
-            SIP <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">Calculator</span>
+    <div>
+      {/* Hero */}
+      <section className="container mx-auto px-6 pt-20 pb-24 max-w-5xl">
+        <div className="text-center">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium mb-6" style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', color: 'var(--fg-muted)' }}>
+            <span className="w-1.5 h-1.5 rounded-full" style={{ background: 'var(--accent)' }}></span>
+            22 Financial Calculators
+          </div>
+          <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-5" style={{ color: 'var(--fg)' }}>
+            Smart money decisions,{' '}
+            <span style={{ color: 'var(--accent)' }}>simplified.</span>
           </h1>
-          <p className="text-lg text-muted-foreground">
-            Calculate your Systematic Investment Plan returns and watch your wealth grow
+          <p className="text-lg md:text-xl max-w-2xl mx-auto mb-10" style={{ color: 'var(--fg-muted)' }}>
+            From SIPs to home loans, plan every rupee with precision calculators, visual charts, and downloadable reports — all in one place.
           </p>
-        </div>
-
-        {/* Main Section: Calculator (60%) and Popular Calculators (40%) */}
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-8">
-          {/* Parameters Card - 60% */}
-          <div className="lg:col-span-3">
-            <CalculatorCard
-              monthlyInvestment={monthlyInvestment}
-              rateOfReturn={rateOfReturn}
-              timePeriod={timePeriod}
-              onMonthlyInvestmentChange={setMonthlyInvestment}
-              onRateOfReturnChange={setRateOfReturn}
-              onTimePeriodChange={setTimePeriod}
-              onCalculate={calculateSIP}
-            />
-          </div>
-
-          {/* Popular Calculators - 40% */}
-          <div className="lg:col-span-2">
-            <PopularCalculators />
+          <div className="flex items-center justify-center gap-3">
+            <Link href="#calculators" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-transform hover:scale-[1.02]" style={{ background: 'var(--accent)', color: 'var(--accent-fg)' }}>
+              Explore Calculators <ArrowRight className="w-4 h-4" />
+            </Link>
           </div>
         </div>
+      </section>
 
-        {/* Results Cards and Chart Section - 50-50 Split */}
-        {results.length > 0 && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            {/* Results Cards */}
-            <div>
-              <div className="space-y-4">
-                <div className="backdrop-blur-md bg-white/30 border border-white/20 rounded-2xl p-4 md:p-6 shadow-lg hover:shadow-xl transition-shadow">
-                  <p className="text-xs md:text-sm font-medium text-muted-foreground mb-2">Total Investment</p>
-                  <p className="text-2xl md:text-3xl font-bold text-foreground">₹{totalInvestment.toLocaleString()}</p>
-                </div>
+      {/* Features */}
+      <section className="container mx-auto px-6 pb-20 max-w-5xl">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[
+            { icon: Calculator, title: '22 Calculators', desc: 'Investments, loans, and government schemes' },
+            { icon: BarChart3, title: 'Visual Charts', desc: 'Interactive pie & area charts' },
+            { icon: Download, title: 'Download Reports', desc: 'Export CSV tables instantly' },
+            { icon: Shield, title: 'Privacy First', desc: 'All calculations run locally' },
+          ].map((f) => (
+            <div key={f.title} className="glass-card p-5 text-center">
+              <div className="w-10 h-10 mx-auto mb-3 rounded-xl flex items-center justify-center" style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)' }}>
+                <f.icon className="w-5 h-5" style={{ color: 'var(--accent)' }} />
+              </div>
+              <h3 className="text-sm font-semibold mb-1" style={{ color: 'var(--fg)' }}>{f.title}</h3>
+              <p className="text-xs" style={{ color: 'var(--fg-subtle)' }}>{f.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
 
-                <div className="backdrop-blur-md bg-white/30 border border-white/20 rounded-2xl p-4 md:p-6 shadow-lg hover:shadow-xl transition-shadow">
-                  <p className="text-xs md:text-sm font-medium text-muted-foreground mb-2">Interest Earned</p>
-                  <p className="text-2xl md:text-3xl font-bold text-accent">₹{totalInterest.toLocaleString()}</p>
-                </div>
-
-                <div className="backdrop-blur-md bg-white/30 border border-white/20 rounded-2xl p-4 md:p-6 shadow-lg hover:shadow-xl transition-shadow">
-                  <p className="text-xs md:text-sm font-medium text-muted-foreground mb-2">Total Corpus</p>
-                  <p className="text-2xl md:text-3xl font-bold text-primary">₹{totalCorpus.toLocaleString()}</p>
-                </div>
+      {/* Calculator Directory */}
+      <section id="calculators" className="container mx-auto px-6 pb-20 max-w-5xl">
+        <div className="space-y-12">
+          {calculatorsList.map((category) => (
+            <div key={category.category}>
+              <h2 className="text-xs font-semibold uppercase tracking-widest mb-4" style={{ color: 'var(--fg-subtle)' }}>
+                {category.category}
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {category.items.map((calc) => {
+                  const Icon = calc.icon
+                  return (
+                    <Link href={`/calculators/${calc.id}`} key={calc.id} className="group">
+                      <div className="glass-card p-4 flex items-center gap-3.5">
+                        <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 transition-colors" style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)' }}>
+                          <Icon className="w-4 h-4 transition-colors" style={{ color: 'var(--fg-subtle)' }} />
+                        </div>
+                        <div className="min-w-0">
+                          <h3 className="text-sm font-semibold transition-colors" style={{ color: 'var(--fg)' }}>{calc.name}</h3>
+                          <p className="text-xs truncate" style={{ color: 'var(--fg-subtle)' }}>{calc.description}</p>
+                        </div>
+                        <ArrowRight className="w-3.5 h-3.5 ml-auto shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: 'var(--fg-subtle)' }} />
+                      </div>
+                    </Link>
+                  )
+                })}
               </div>
             </div>
+          ))}
+        </div>
+      </section>
 
-            {/* Chart */}
-            <div className="backdrop-blur-md bg-white/40 border border-white/20 rounded-2xl p-6 md:p-8 shadow-lg">
-              <h2 className="text-xl md:text-2xl font-bold text-foreground mb-6">Investment Growth</h2>
-              <CorpusChart data={results} />
-            </div>
-          </div>
-        )}
-
-        {/* Table Section */}
-        {results.length > 0 && (
-          <div className="backdrop-blur-md bg-white/40 border border-white/20 rounded-2xl p-6 md:p-8 shadow-lg mb-8">
-            <h2 className="text-xl md:text-2xl font-bold text-foreground mb-6">Year-wise Breakdown</h2>
-            <div className="overflow-x-auto">
-              <ResultsTable data={results} />
-            </div>
-
-            <div className="mt-8 flex flex-col sm:flex-row gap-3 sm:gap-4">
-              <button className="px-6 py-3 bg-gradient-to-r from-primary to-secondary text-white font-semibold rounded-lg hover:shadow-lg transition-shadow text-sm md:text-base">
-                Download Report
-              </button>
-              <button className="px-6 py-3 border border-primary text-primary font-semibold rounded-lg hover:bg-primary/5 transition-colors text-sm md:text-base">
-                Share
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* SIP Information Section */}
-        <SIPInfo />
-      </div>
-    </main>
-  );
+      {/* Footer */}
+      <footer className="border-t py-8" style={{ borderColor: 'var(--card-border)' }}>
+        <div className="container mx-auto px-6 max-w-5xl text-center">
+          <p className="text-xs" style={{ color: 'var(--fg-subtle)' }}>
+            © {new Date().getFullYear()} KYFS Finance. All calculations are for educational purposes only.
+          </p>
+        </div>
+      </footer>
+    </div>
+  )
 }

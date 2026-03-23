@@ -11,7 +11,11 @@ next.user-config.*
 # Environment variables
 .env*.local
 
+supabase-migration.sql
+
 # Common ignores
 node_modules/
 .next/
 .DS_Store
+
+additional_requirements/
