@@ -1,7 +1,7 @@
 'use client'
 import { useState, useMemo } from 'react'
 import { useCalculation } from '@/hooks/useCalculation'
-import { Slider, StatCard, ChartSection, CalculateButton, formatINR } from './shared'
+import { Slider, StatCard, ChartSection, DataTable, CalculateButton, formatINR } from './shared'
 import { CalculatorInfoSections } from './CalculatorInfoSections'
 
 export function FlatVsReducingCalc() {
@@ -66,7 +66,7 @@ export function FlatVsReducingCalc() {
     <div className="space-y-6">
       <div className="glass-card p-6 space-y-5 max-w-lg">
         <Slider label="Loan Amount" value={principal} set={setPrincipal} min={10000} max={10000000} step={10000} fmt="currency" />
-        <Slider label="Interest Rate (p.a.)" value={rate} set={setRate} min={1} max={30} step={0.5} fmt="percent" />
+        <Slider label="Interest Rate (p.a.)" value={rate} set={setRate} min={5} max={30} step={0.5} fmt="percent" />
         <Slider label="Tenure" value={years} set={setYears} min={1} max={30} step={1} fmt="years" />
         <CalculateButton onClick={handleCalculate} />
       </div>
@@ -100,6 +100,28 @@ export function FlatVsReducingCalc() {
               <p className="text-2xl font-bold" style={{ color: 'var(--accent)' }}>₹{formatINR(savings)}</p>
             </div>
           )}
+          <div className="mt-8">
+            <DataTable 
+              columns={['Feature','Flat Rate','Reducing Balance']} 
+              rows={[
+                ['EMI', String(flatEmi), String(reducingEmi)],
+                ['Total Interest', String(flatInterest), String(reducingInterest)],
+                ['Total Payment', String(flatTotal), String(reducingTotal)]
+              ]} 
+              filename="flat-vs-reducing-report" 
+              calcKey="flat-vs-reducing"
+              inputs={[
+                { label: 'Loan Amount', value: principal },
+                { label: 'Interest Rate', value: `${rate}%` },
+                { label: 'Tenure', value: `${years} Years` }
+              ]}
+              outputs={[
+                { label: 'Flat EMI', value: flatEmi },
+                { label: 'Reducing EMI', value: reducingEmi },
+                { label: 'Total Savings', value: savings }
+              ]}
+            />
+          </div>
         </>
       )}
 

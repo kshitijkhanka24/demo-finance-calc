@@ -1,7 +1,7 @@
 'use client'
 import { useState, useMemo } from 'react'
 import { useCalculation } from '@/hooks/useCalculation'
-import { Slider, StatCard, CalculateButton, formatINR } from './shared'
+import { Slider, StatCard, DataTable, CalculateButton, formatINR } from './shared'
 import { CalculatorInfoSections } from './CalculatorInfoSections'
 
 export function OverdraftCalc() {
@@ -49,11 +49,31 @@ export function OverdraftCalc() {
         )}
       </div>
       {calculated && (
-        <div className="grid grid-cols-3 gap-3">
-          <StatCard label="Principal" value={amount} />
-          <StatCard label="Interest" value={totalInterest} accent="secondary" />
-          <StatCard label="Total Payable" value={totalPayable} accent="primary" />
-        </div>
+        <>
+          <div className="grid grid-cols-3 gap-3">
+            <StatCard label="Principal" value={amount} />
+            <StatCard label="Interest" value={totalInterest} accent="secondary" />
+            <StatCard label="Total Payable" value={totalPayable} accent="primary" />
+          </div>
+          <div className="mt-8">
+            <DataTable 
+              columns={['Amount','Rate','Days','Daily Interest','Total Interest','Total Payable']} 
+              rows={[[String(amount), `${rate}%`, String(days), String(dailyInterest), String(totalInterest), String(totalPayable)]]} 
+              filename="overdraft-report" 
+              calcKey="overdraft"
+              inputs={[
+                { label: 'Overdraft Amount', value: amount },
+                { label: 'Interest Rate', value: `${rate}%` },
+                { label: 'Days', value: `${days} Days` }
+              ]}
+              outputs={[
+                { label: 'Daily Interest', value: dailyInterest },
+                { label: 'Total Interest', value: totalInterest },
+                { label: 'Total Payable', value: totalPayable }
+              ]}
+            />
+          </div>
+        </>
       )}
       <CalculatorInfoSections calcKey="overdraft" />
     </div>

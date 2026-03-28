@@ -4,6 +4,7 @@ import { Analytics } from '@vercel/analytics/next'
 import { ThemeProvider } from '@/components/ThemeProvider'
 import { AuthProvider } from '@/components/AuthProvider'
 import { Navbar } from '@/components/Navbar'
+import { Footer } from '@/components/Footer'
 import './globals.css'
 
 const _geist = Geist({ subsets: ["latin"] });
@@ -21,13 +22,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="font-sans antialiased">
+      <body className="font-sans antialiased flex flex-col min-h-screen">
         <ThemeProvider>
           <AuthProvider>
             <Navbar />
             <main className="flex-1">
               {children}
             </main>
+            <Footer />
           </AuthProvider>
         </ThemeProvider>
         <Analytics />

@@ -81,14 +81,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t py-8" style={{ borderColor: 'var(--card-border)' }}>
-        <div className="container mx-auto px-6 max-w-5xl text-center">
-          <p className="text-xs" style={{ color: 'var(--fg-subtle)' }}>
-            © {new Date().getFullYear()} KYFS Finance. All calculations are for educational purposes only.
-          </p>
-        </div>
-      </footer>
     </div>
   )
 }

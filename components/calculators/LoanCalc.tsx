@@ -4,8 +4,16 @@ import { useCalculation } from '@/hooks/useCalculation'
 import { Slider, StatCard, ChartSection, DataTable, CalculateButton } from './shared'
 import { CalculatorInfoSections } from './CalculatorInfoSections'
 
-export function LoanCalc({ id, title, defaultPrincipal = 500000, defaultRate = 10, defaultYears = 5, maxP = 10000000 }: {
-  id: string; title: string; defaultPrincipal?: number; defaultRate?: number; defaultYears?: number; maxP?: number
+export function LoanCalc({ 
+  id, title, 
+  defaultPrincipal = 500000, minP = 10000, maxP = 10000000, stepP = 10000,
+  defaultRate = 10, minR = 1, maxR = 30, stepR = 0.5,
+  defaultYears = 5, minY = 1, maxY = 30, stepY = 1
+}: {
+  id: string; title?: string; 
+  defaultPrincipal?: number; minP?: number; maxP?: number; stepP?: number;
+  defaultRate?: number; minR?: number; maxR?: number; stepR?: number;
+  defaultYears?: number; minY?: number; maxY?: number; stepY?: number;
 }) {
   const { logCalculation } = useCalculation(id)
   const [principal, setPrincipal] = useState(defaultPrincipal)
@@ -44,12 +52,12 @@ export function LoanCalc({ id, title, defaultPrincipal = 500000, defaultRate = 1
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="glass-card p-6 space-y-5">
-          <Slider label="Loan Amount" value={principal} set={setPrincipal} min={10000} max={maxP} step={10000} fmt="currency" />
-          <Slider label="Interest Rate (p.a.)" value={rate} set={setRate} min={1} max={30} step={0.5} fmt="percent" />
-          <Slider label="Tenure" value={years} set={setYears} min={1} max={30} step={1} fmt="years" />
+          <Slider label="Loan Amount" value={principal} set={setPrincipal} min={minP} max={maxP} step={stepP} fmt="currency" />
+          <Slider label="Interest Rate (p.a.)" value={rate} set={setRate} min={minR} max={maxR} step={stepR} fmt="percent" />
+          <Slider label="Tenure" value={years} set={setYears} min={minY} max={maxY} step={stepY} fmt="years" />
           <CalculateButton onClick={handleCalculate} />
         </div>
-        {calculated && <ChartSection pieData={pieData} detailedData={detailedData} gradientId={`${id}Grad`} areaLabel="Cumulative Payments" />}
+        {calculated && <ChartSection id={`${id}-chart`} pieData={pieData} detailedData={detailedData} gradientId={`${id}Grad`} areaLabel="Cumulative Payments" />}
       </div>
       {calculated && (
         <>
@@ -58,7 +66,23 @@ export function LoanCalc({ id, title, defaultPrincipal = 500000, defaultRate = 1
             <StatCard label="Total Interest" value={totalInterest} accent="secondary" />
             <StatCard label="Total Payment" value={totalPayment} accent="primary" />
           </div>
-          <DataTable columns={['Year','Principal Paid','Interest Paid','Balance']} rows={chartData.map(r => [String(r.year), r.principalPaid, r.interestPaid, r.balance])} filename={`${id}-report`} />
+          <DataTable 
+            columns={['Year','Principal Paid','Interest Paid','Balance']} 
+            rows={chartData.map(r => [String(r.year), r.principalPaid, r.interestPaid, r.balance])} 
+            filename={`${id}-report`}
+            calcKey={id}
+            chartId={`${id}-chart`}
+            inputs={[
+              { label: 'Loan Amount', value: principal },
+              { label: 'Interest Rate', value: `${rate}%` },
+              { label: 'Tenure', value: `${years} Years` }
+            ]}
+            outputs={[
+              { label: 'Monthly EMI', value: emi },
+              { label: 'Total Interest', value: totalInterest },
+              { label: 'Total Payment', value: totalPayment }
+            ]}
+          />
         </>
       )}
       <CalculatorInfoSections calcKey={id} />

@@ -57,7 +57,8 @@ export function CalculatorInfoSections({ calcKey }: { calcKey: string }) {
         </div>
       </section>
 
-      {/* ── Calculation Method ── */}
+      {/* ── Calculation Method (Hidden) ── */}
+      {/* 
       {c.formula && (
         <section className="glass-card p-6 md:p-8">
           <h2 className="text-lg md:text-xl font-bold mb-5" style={{ color: 'var(--fg)' }}>Calculation Method</h2>
@@ -89,6 +90,7 @@ export function CalculatorInfoSections({ calcKey }: { calcKey: string }) {
           </div>
         </section>
       )}
+      */}
 
       {/* ── Key Benefits ── */}
       {c.benefits.length > 0 && (
@@ -110,19 +112,6 @@ export function CalculatorInfoSections({ calcKey }: { calcKey: string }) {
           </div>
         </section>
       )}
-
-      {/* ── Disclaimer ── */}
-      <section className="rounded-2xl p-6 md:p-8" style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)' }}>
-        <div className="flex items-start gap-3">
-          <AlertCircle size={22} className="flex-shrink-0 mt-0.5" style={{ color: '#dc2626' }} />
-          <div>
-            <h2 className="text-base md:text-lg font-bold mb-2" style={{ color: 'var(--fg)' }}>Important Disclaimer</h2>
-            {c.disclaimer.map((p, i) => (
-              <p key={i} className="text-sm md:text-base leading-relaxed mb-2" style={{ color: 'var(--fg-muted)' }}>{p}</p>
-            ))}
-          </div>
-        </div>
-      </section>
     </div>
   )
 }

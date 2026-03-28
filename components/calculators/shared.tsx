@@ -5,6 +5,7 @@
 import { useState, useCallback, ReactNode } from 'react'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend, AreaChart, Area, XAxis, YAxis, CartesianGrid } from 'recharts'
 import { ChevronDown, ChevronRight, Download, Calculator } from 'lucide-react'
+import { generatePDFReport } from '@/lib/pdf-report'
 
 // Indian number format
 export function formatINR(n: number): string {
@@ -91,6 +92,31 @@ export function Slider({ label, value, set, min, max, step, fmt }: {
   )
 }
 
+// ─── Inflation Toggle & Helper ───
+export function calculateInflationAdjusted(value: number, rate: number, years: number): number {
+  return Math.round(value / Math.pow(1 + rate / 100, years))
+}
+
+export function InflationToggle({ enabled, setEnabled, rate, setRate }: { enabled: boolean; setEnabled: (v: boolean) => void; rate: number; setRate: (v: number) => void }) {
+  return (
+    <div className="space-y-3 pt-3 mt-4 border-t" style={{ borderColor: 'var(--card-border)' }}>
+      <div className="flex items-center justify-between">
+        <label className="text-xs font-semibold uppercase tracking-wider cursor-pointer select-none" style={{ color: 'var(--fg-subtle)' }} onClick={() => setEnabled(!enabled)}>Adjust for Inflation</label>
+        <button 
+          onClick={() => setEnabled(!enabled)}
+          className="relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
+          style={{ background: enabled ? 'var(--accent)' : 'var(--card-border)' }}
+        >
+          <span aria-hidden="true" className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${enabled ? 'translate-x-4' : 'translate-x-0'}`} />
+        </button>
+      </div>
+      {enabled && (
+        <Slider label="Expected Inflation (%)" value={rate} set={setRate} min={1} max={15} step={0.5} fmt="percent" />
+      )}
+    </div>
+  )
+}
+
 // ─── StatCard ───
 export function StatCard({ label, value, accent, prefix = '₹' }: { label: string; value: number; accent?: 'primary' | 'secondary'; prefix?: string }) {
   const color = accent === 'primary' ? 'var(--accent)' : accent === 'secondary' ? 'var(--accent2)' : 'var(--fg)'
@@ -123,7 +149,7 @@ export function CalculateButton({ onClick, label = 'Calculate' }: { onClick: () 
 }
 
 // ─── Chart Wrapper with Simple/Detailed toggle ───
-export function ChartSection({ pieData, detailedData, areaData, areaDataKey, gradientId, gradientColor, areaLabel = 'Growth' }: {
+export function ChartSection({ pieData, detailedData, areaData, areaDataKey, gradientId, gradientColor, areaLabel = 'Growth', id }: {
   pieData: { name: string; value: number }[]
   detailedData?: { year: number; principal: number; interest: number }[]
   areaData?: { year: number; [key: string]: number }[]
@@ -131,6 +157,7 @@ export function ChartSection({ pieData, detailedData, areaData, areaDataKey, gra
   gradientId?: string
   gradientColor?: string
   areaLabel?: string
+  id?: string
 }) {
   const [detailed, setDetailed] = useState(false)
 
@@ -138,7 +165,7 @@ export function ChartSection({ pieData, detailedData, areaData, areaDataKey, gra
   const hasDetailed = (detailedData && detailedData.length > 0) || (areaData && areaData.length > 0)
 
   return (
-    <div className="glass-card p-5 h-[380px] flex flex-col chart-animate" key={detailed ? 'detail' : 'simple'}>
+    <div id={id} className="glass-card p-5 h-[380px] flex flex-col chart-animate" key={detailed ? 'detail' : 'simple'}>
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--fg-subtle)' }}>
           {detailed ? areaLabel : 'Breakdown'}
@@ -223,26 +250,42 @@ export function ChartSection({ pieData, detailedData, areaData, areaDataKey, gra
 }
 
 // ─── Table with Download ───
-export function DataTable({ columns, rows, filename }: {
+export function DataTable({ columns, rows, filename, inputs, outputs, calcKey, chartId }: {
   columns: string[]
   rows: (string | number)[][]
   filename: string
+  inputs?: { label: string, value: string | number }[]
+  outputs?: { label: string, value: string | number }[]
+  calcKey?: string
+  chartId?: string
 }) {
-  const download = useCallback(() => {
-    const csv = [columns.join(','), ...rows.map(r => r.join(','))].join('\n')
-    const blob = new Blob([csv], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url; a.download = `${filename}.csv`; a.click()
-    URL.revokeObjectURL(url)
-  }, [columns, rows, filename])
+  const [isDownloading, setIsDownloading] = useState(false)
+
+  const download = useCallback(async () => {
+    if (inputs && outputs && calcKey) {
+      setIsDownloading(true)
+      try {
+        await generatePDFReport({ columns, rows, inputs, outputs, calcKey, chartElementId: chartId })
+      } finally {
+        setIsDownloading(false)
+      }
+    } else {
+      // Fallback CSV download if props are missing
+      const csv = [columns.join(','), ...rows.map(r => r.join(','))].join('\n')
+      const blob = new Blob([csv], { type: 'text/csv' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url; a.download = `${filename}.csv`; a.click()
+      URL.revokeObjectURL(url)
+    }
+  }, [columns, rows, filename, inputs, outputs, calcKey, chartId])
 
   return (
     <div className="glass-card overflow-hidden">
       <div className="flex items-center justify-between px-5 py-3 border-b" style={{ borderColor: 'var(--card-border)' }}>
         <h3 className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--fg-subtle)' }}>Schedule</h3>
-        <button onClick={download} className="flex items-center gap-1.5 text-xs font-medium transition-colors" style={{ color: 'var(--accent)' }}>
-          <Download className="w-3 h-3" /> Download CSV
+        <button onClick={download} disabled={isDownloading} className="flex items-center gap-1.5 text-xs font-medium transition-colors" style={{ color: 'var(--accent)', opacity: isDownloading ? 0.7 : 1 }}>
+          <Download className="w-3 h-3" /> {isDownloading ? 'Generating...' : (calcKey ? 'Download Report (PDF)' : 'Download CSV')}
         </button>
       </div>
       <div className="overflow-x-auto">

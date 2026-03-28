@@ -54,7 +54,7 @@ export function LasCalc() {
           </div>
           <CalculateButton onClick={handleCalculate} />
         </div>
-        {calculated && <ChartSection pieData={pieData} detailedData={detailedData} gradientId="lasGrad" areaLabel="Cumulative Payments" />}
+        {calculated && <ChartSection id="las-chart" pieData={pieData} detailedData={detailedData} gradientId="lasGrad" areaLabel="Cumulative Payments" />}
       </div>
       {calculated && (
         <>
@@ -63,7 +63,25 @@ export function LasCalc() {
             <StatCard label="Total Interest" value={totalInterest} accent="secondary" />
             <StatCard label="Total Payment" value={totalPayment} accent="primary" />
           </div>
-          <DataTable columns={['Year','Principal Paid','Interest Paid','Balance']} rows={chartData.map(r => [String(r.year), r.principalPaid, r.interestPaid, r.balance])} filename="las-report" />
+          <DataTable 
+            columns={['Year','Principal Paid','Interest Paid','Balance']} 
+            rows={chartData.map(r => [String(r.year), r.principalPaid, r.interestPaid, r.balance])} 
+            filename="las-report" 
+            calcKey="loan-against-security"
+            chartId="las-chart"
+            inputs={[
+              { label: 'Security Value', value: securityValue },
+              { label: 'LTV Ratio', value: `${ltv}%` },
+              { label: 'Interest Rate', value: `${rate}%` },
+              { label: 'Tenure', value: `${years} Years` }
+            ]}
+            outputs={[
+              { label: 'Eligible Loan Amount', value: (securityValue * ltv) / 100 },
+              { label: 'Monthly EMI', value: emi },
+              { label: 'Total Interest', value: totalInterest },
+              { label: 'Total Payment', value: totalPayment }
+            ]}
+          />
         </>
       )}
       <CalculatorInfoSections calcKey="loan-against-security" />

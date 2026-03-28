@@ -1,7 +1,7 @@
 'use client'
 import { useState, useMemo } from 'react'
 import { useCalculation } from '@/hooks/useCalculation'
-import { Slider, StatCard, CalculateButton, formatINR } from './shared'
+import { Slider, StatCard, DataTable, CalculateButton, formatINR } from './shared'
 import { CalculatorInfoSections } from './CalculatorInfoSections'
 
 export function GratuityCalc() {
@@ -27,8 +27,8 @@ export function GratuityCalc() {
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="glass-card p-6 space-y-5">
-          <Slider label="Last Drawn Salary (Basic + DA)" value={salary} set={setSalary} min={5000} max={500000} step={1000} fmt="currency" />
-          <Slider label="Years of Service" value={yearsOfService} set={setYearsOfService} min={5} max={40} step={1} fmt="years" />
+          <Slider label="Last Drawn Salary (Basic + DA)" value={salary} set={setSalary} min={10000} max={1000000} step={1000} fmt="currency" />
+          <Slider label="Years of Service" value={yearsOfService} set={setYearsOfService} min={1} max={50} step={1} fmt="years" />
           <CalculateButton onClick={handleCalculate} />
         </div>
         {calculated && (
@@ -40,10 +40,29 @@ export function GratuityCalc() {
         )}
       </div>
       {calculated && (
-        <div className="grid grid-cols-2 gap-3">
-          <StatCard label="Monthly Salary" value={salary} />
-          <StatCard label="Gratuity" value={gratuity} accent="primary" />
-        </div>
+        <>
+          <div className="grid grid-cols-2 gap-3">
+            <StatCard label="Monthly Salary" value={salary} />
+            <StatCard label="Gratuity" value={gratuity} accent="primary" />
+          </div>
+          <DataTable 
+            columns={['Calculation Component','Value']} 
+            rows={[
+              ['Monthly Salary Phase', String(salary)],
+              ['Service Years Equivalent', String(yearsOfService)],
+              ['Calculated Gratuity (15/26 factor)', String(gratuity)]
+            ]} 
+            filename="gratuity-report" 
+            calcKey="gratuity"
+            inputs={[
+              { label: 'Last Drawn Salary', value: salary },
+              { label: 'Years of Service', value: `${yearsOfService} Years` }
+            ]}
+            outputs={[
+              { label: 'Calculated Gratuity', value: gratuity }
+            ]}
+          />
+        </>
       )}
       <CalculatorInfoSections calcKey="gratuity" />
     </div>

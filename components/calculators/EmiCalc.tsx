@@ -42,12 +42,12 @@ export function EmiCalc() {
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="glass-card p-6 space-y-5">
-          <Slider label="Loan Amount" value={principal} set={setPrincipal} min={10000} max={20000000} step={50000} fmt="currency" />
+          <Slider label="Loan Amount" value={principal} set={setPrincipal} min={100000} max={100000000} step={100000} fmt="currency" />
           <Slider label="Interest Rate (p.a.)" value={rate} set={setRate} min={1} max={30} step={0.5} fmt="percent" />
           <Slider label="Tenure" value={years} set={setYears} min={1} max={30} step={1} fmt="years" />
           <CalculateButton onClick={handleCalculate} />
         </div>
-        {calculated && <ChartSection pieData={pieData} detailedData={detailedData} gradientId="emiGrad" areaLabel="Cumulative Payments" />}
+        {calculated && <ChartSection id="emi-chart" pieData={pieData} detailedData={detailedData} gradientId="emiGrad" areaLabel="Cumulative Payments" />}
       </div>
       {calculated && (
         <>
@@ -56,7 +56,23 @@ export function EmiCalc() {
             <StatCard label="Total Interest" value={totalInterest} accent="secondary" />
             <StatCard label="Total Payment" value={totalPayment} accent="primary" />
           </div>
-          <DataTable columns={['Year', 'Principal Paid', 'Interest Paid', 'Balance']} rows={chartData.map(r => [String(r.year), r.principal, r.interest, r.balance])} filename="emi-report" />
+          <DataTable 
+            columns={['Year', 'Principal Paid', 'Interest Paid', 'Balance']} 
+            rows={chartData.map(r => [String(r.year), r.principal, r.interest, r.balance])} 
+            filename="emi-report" 
+            calcKey="emi"
+            chartId="emi-chart"
+            inputs={[
+              { label: 'Loan Amount', value: principal },
+              { label: 'Interest Rate', value: `${rate}%` },
+              { label: 'Tenure', value: `${years} Years` }
+            ]}
+            outputs={[
+              { label: 'Monthly EMI', value: emi },
+              { label: 'Total Interest', value: totalInterest },
+              { label: 'Total Payment', value: totalPayment }
+            ]}
+          />
         </>
       )}
       <CalculatorInfoSections calcKey="emi" />

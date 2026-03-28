@@ -1,7 +1,7 @@
 'use client'
 import { useState, useMemo } from 'react'
 import { useCalculation } from '@/hooks/useCalculation'
-import { Slider, StatCard, ChartSection, DataTable, CalculateButton } from './shared'
+import { Slider, StatCard, ChartSection, DataTable, CalculateButton, InflationToggle, calculateInflationAdjusted } from './shared'
 import { CalculatorInfoSections } from './CalculatorInfoSections'
 
 export function StepUpSipCalc() {
@@ -12,6 +12,8 @@ export function StepUpSipCalc() {
   const [years, setYears] = useState(15)
   const [calculated, setCalculated] = useState(true)
   const [calcKey, setCalcKey] = useState(0)
+  const [inflationEnabled, setInflationEnabled] = useState(false)
+  const [inflationRate, setInflationRate] = useState(6)
 
   const { totalInvested, maturity, chartData, detailedData } = useMemo(() => {
     if (!calculated) return { totalInvested: 0, maturity: 0, chartData: [], detailedData: [] }
@@ -29,8 +31,10 @@ export function StepUpSipCalc() {
   const handleCalculate = () => {
     setCalculated(true)
     setCalcKey(k => k + 1)
-    logCalculation({ monthlySip, annualIncrease, rate, years })
+    logCalculation({ monthlySip, annualIncrease, rate, years, inflationRate: inflationEnabled ? inflationRate : undefined })
   }
+
+  const adjustedMaturity = useMemo(() => calculated && inflationEnabled ? calculateInflationAdjusted(maturity, inflationRate, years) : maturity, [calculated, inflationEnabled, inflationRate, years, maturity])
 
   const pieData = [{ name: 'Invested', value: totalInvested }, { name: 'Returns', value: maturity - totalInvested }]
 
@@ -38,22 +42,44 @@ export function StepUpSipCalc() {
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="glass-card p-6 space-y-5">
-          <Slider label="Starting Monthly SIP" value={monthlySip} set={setMonthlySip} min={500} max={100000} step={500} fmt="currency" />
-          <Slider label="Annual Increase" value={annualIncrease} set={setAnnualIncrease} min={1} max={50} step={1} fmt="percent" />
-          <Slider label="Expected Return (p.a.)" value={rate} set={setRate} min={1} max={30} step={0.5} fmt="percent" />
-          <Slider label="Time Period" value={years} set={setYears} min={1} max={30} step={1} fmt="years" />
+          <Slider label="Starting Monthly SIP" value={monthlySip} set={setMonthlySip} min={500} max={1000000} step={500} fmt="currency" />
+          <Slider label="Annual Increase" value={annualIncrease} set={setAnnualIncrease} min={5} max={25} step={1} fmt="percent" />
+          <Slider label="Expected Return (p.a.)" value={rate} set={setRate} min={5} max={30} step={0.5} fmt="percent" />
+          <Slider label="Time Period" value={years} set={setYears} min={2} max={60} step={1} fmt="years" />
+          <InflationToggle enabled={inflationEnabled} setEnabled={setInflationEnabled} rate={inflationRate} setRate={setInflationRate} />
           <CalculateButton onClick={handleCalculate} />
         </div>
-        {calculated && <ChartSection pieData={pieData} detailedData={detailedData} gradientId="stepGrad" areaLabel="Year-on-Year Growth" />}
+        {calculated && <ChartSection id="stepup-chart" pieData={pieData} detailedData={detailedData} gradientId="stepGrad" areaLabel="Year-on-Year Growth" />}
       </div>
       {calculated && (
         <>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             <StatCard label="Invested" value={totalInvested} />
             <StatCard label="Wealth Gained" value={maturity - totalInvested} accent="secondary" />
-            <StatCard label="Total Value" value={maturity} accent="primary" />
+            <StatCard label={inflationEnabled ? "Total Value" : "Total Value"} value={maturity} accent="primary" />
+            {inflationEnabled && (
+              <StatCard label="Adjusted Total" value={adjustedMaturity} accent="primary" />
+            )}
           </div>
-          <DataTable columns={['Year','Invested','Value']} rows={chartData.map(r => [String(r.year), r.invested, r.value])} filename="step-up-sip-report" />
+          <DataTable 
+            columns={['Year','Invested','Value']} 
+            rows={chartData.map(r => [String(r.year), r.invested, r.value])} 
+            filename="step-up-sip-report" 
+            calcKey="step-up-sip"
+            chartId="stepup-chart"
+            inputs={[
+              { label: 'Starting Monthly SIP', value: monthlySip },
+              { label: 'Annual Increase', value: `${annualIncrease}%` },
+              { label: 'Expected Return', value: `${rate}%` },
+              { label: 'Time Period', value: `${years} Years` }
+            ]}
+            outputs={[
+              { label: 'Invested', value: totalInvested },
+              { label: 'Wealth Gained', value: maturity - totalInvested },
+              { label: 'Total Value', value: maturity },
+              ...(inflationEnabled ? [{ label: 'Inflation Adjusted Value', value: adjustedMaturity }] : [])
+            ]}
+          />
         </>
       )}
       <CalculatorInfoSections calcKey="step-up-sip" />

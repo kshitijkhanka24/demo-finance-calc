@@ -1,7 +1,7 @@
 'use client'
 import { useState, useMemo } from 'react'
 import { useCalculation } from '@/hooks/useCalculation'
-import { Slider, StatCard, ChartSection, DataTable, CalculateButton, formatINR } from './shared'
+import { Slider, StatCard, ChartSection, DataTable, CalculateButton, formatINR, InflationToggle, calculateInflationAdjusted } from './shared'
 import { CalculatorInfoSections } from './CalculatorInfoSections'
 
 export function SipCalc() {
@@ -12,6 +12,8 @@ export function SipCalc() {
   const [years, setYears] = useState(10)
   const [calculated, setCalculated] = useState(true)
   const [calcKey, setCalcKey] = useState(0)
+  const [inflationEnabled, setInflationEnabled] = useState(false)
+  const [inflationRate, setInflationRate] = useState(6)
 
   const { totalInvested, totalReturns, maturity, chartData, detailedData } = useMemo(() => {
     if (!calculated) return { totalInvested: 0, totalReturns: 0, maturity: 0, chartData: [], detailedData: [] }
@@ -38,8 +40,10 @@ export function SipCalc() {
   const handleCalculate = () => {
     setCalculated(true)
     setCalcKey(k => k + 1)
-    logCalculation({ mode, investment, rate, years })
+    logCalculation({ mode, investment, rate, years, inflationRate: inflationEnabled ? inflationRate : undefined })
   }
+
+  const adjustedMaturity = useMemo(() => calculated && inflationEnabled ? calculateInflationAdjusted(maturity, inflationRate, years) : maturity, [calculated, inflationEnabled, inflationRate, years, maturity])
 
   const pieData = [{ name: 'Invested', value: totalInvested }, { name: 'Returns', value: totalReturns }]
 
@@ -51,21 +55,43 @@ export function SipCalc() {
             <button className={`flex-1 py-2 text-xs font-semibold rounded-md transition-colors`} style={{ background: mode==='sip' ? 'var(--card-bg)' : 'transparent', color: mode==='sip' ? 'var(--fg)' : 'var(--fg-subtle)', border: mode==='sip' ? '1px solid var(--card-border)' : '1px solid transparent' }} onClick={() => setMode('sip')}>Monthly SIP</button>
             <button className={`flex-1 py-2 text-xs font-semibold rounded-md transition-colors`} style={{ background: mode==='lumpsum' ? 'var(--card-bg)' : 'transparent', color: mode==='lumpsum' ? 'var(--fg)' : 'var(--fg-subtle)', border: mode==='lumpsum' ? '1px solid var(--card-border)' : '1px solid transparent' }} onClick={() => setMode('lumpsum')}>Lumpsum</button>
           </div>
-          <Slider label={mode==='sip'?'Monthly Amount':'Investment'} value={investment} set={setInvestment} min={mode==='sip'?500:10000} max={mode==='sip'?100000:10000000} step={mode==='sip'?500:10000} fmt="currency" />
-          <Slider label="Expected Return (p.a.)" value={rate} set={setRate} min={1} max={30} step={0.5} fmt="percent" />
-          <Slider label="Time Period" value={years} set={setYears} min={1} max={40} step={1} fmt="years" />
+          <Slider label={mode==='sip'?'Monthly Amount':'Investment'} value={investment} set={setInvestment} min={mode==='sip'?500:10000} max={mode==='sip'?1000000:10000000} step={mode==='sip'?500:10000} fmt="currency" />
+          <Slider label="Expected Return (p.a.)" value={rate} set={setRate} min={5} max={30} step={0.5} fmt="percent" />
+          <Slider label="Time Period" value={years} set={setYears} min={1} max={mode==='sip'?60:30} step={1} fmt="years" />
+          <InflationToggle enabled={inflationEnabled} setEnabled={setInflationEnabled} rate={inflationRate} setRate={setInflationRate} />
           <CalculateButton onClick={handleCalculate} />
         </div>
-        {calculated && <ChartSection pieData={pieData} detailedData={detailedData} gradientId="sipGrad" areaLabel="Year-on-Year Growth" />}
+        {calculated && <ChartSection id="sip-chart" pieData={pieData} detailedData={detailedData} gradientId="sipGrad" areaLabel="Year-on-Year Growth" />}
       </div>
       {calculated && (
         <>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             <StatCard label="Invested" value={totalInvested} />
             <StatCard label="Returns" value={totalReturns} accent="secondary" />
-            <StatCard label="Total" value={maturity} accent="primary" />
+            <StatCard label={inflationEnabled ? "Total" : "Total"} value={maturity} accent="primary" />
+            {inflationEnabled && (
+              <StatCard label="Adjusted Total" value={adjustedMaturity} accent="primary" />
+            )}
           </div>
-          <DataTable columns={['Year','Invested','Value']} rows={chartData.map(r => [String(r.year), r.invested, r.value])} filename="sip-report" />
+          <DataTable 
+            columns={['Year','Invested','Value']} 
+            rows={chartData.map(r => [String(r.year), r.invested, r.value])} 
+            filename="sip-report" 
+            calcKey="sip"
+            chartId="sip-chart"
+            inputs={[
+              { label: 'Investment Mode', value: mode === 'sip' ? 'Monthly SIP' : 'Lumpsum' },
+              { label: mode === 'sip' ? 'Monthly Amount' : 'Investment Amount', value: investment },
+              { label: 'Expected Return', value: `${rate}%` },
+              { label: 'Time Period', value: `${years} Years` }
+            ]}
+            outputs={[
+              { label: 'Total Invested', value: totalInvested },
+              { label: 'Est. Returns', value: totalReturns },
+              { label: 'Total Value', value: maturity },
+              ...(inflationEnabled ? [{ label: 'Inflation Adjusted Value', value: adjustedMaturity }] : [])
+            ]}
+          />
         </>
       )}
       <CalculatorInfoSections calcKey="sip" />

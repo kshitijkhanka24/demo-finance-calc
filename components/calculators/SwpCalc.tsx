@@ -42,13 +42,13 @@ export function SwpCalc() {
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="glass-card p-6 space-y-5">
-          <Slider label="Total Investment" value={corpus} set={setCorpus} min={100000} max={50000000} step={100000} fmt="currency" />
-          <Slider label="Monthly Withdrawal" value={withdrawal} set={setWithdrawal} min={1000} max={500000} step={1000} fmt="currency" />
-          <Slider label="Expected Return (p.a.)" value={rate} set={setRate} min={1} max={25} step={0.5} fmt="percent" />
-          <Slider label="Period" value={years} set={setYears} min={1} max={30} step={1} fmt="years" />
+          <Slider label="Total Investment" value={corpus} set={setCorpus} min={50000} max={50000000} step={50000} fmt="currency" />
+          <Slider label="Monthly Withdrawal" value={withdrawal} set={setWithdrawal} min={500} max={500000} step={500} fmt="currency" />
+          <Slider label="Expected Return (p.a.)" value={rate} set={setRate} min={5} max={30} step={0.5} fmt="percent" />
+          <Slider label="Period" value={years} set={setYears} min={1} max={50} step={1} fmt="years" />
           <CalculateButton onClick={handleCalculate} />
         </div>
-        {calculated && <ChartSection pieData={pieData} detailedData={detailedData} gradientId="swpGrad" areaLabel="Balance vs Withdrawn" />}
+        {calculated && <ChartSection id="swp-chart" pieData={pieData} detailedData={detailedData} gradientId="swpGrad" areaLabel="Balance vs Withdrawn" />}
       </div>
       {calculated && (
         <>
@@ -57,7 +57,24 @@ export function SwpCalc() {
             <StatCard label="Remaining Corpus" value={Math.max(0, finalValue)} accent="primary" />
             <StatCard label="Investment" value={corpus} />
           </div>
-          <DataTable columns={['Year','Balance']} rows={chartData.map(r => [String(r.year), r.balance])} filename="swp-report" />
+          <DataTable 
+            columns={['Year','Balance']} 
+            rows={chartData.map(r => [String(r.year), r.balance])} 
+            filename="swp-report"
+            calcKey="swp"
+            chartId="swp-chart"
+            inputs={[
+              { label: 'Total Investment', value: corpus },
+              { label: 'Monthly Withdrawal', value: withdrawal },
+              { label: 'Expected Return', value: `${rate}%` },
+              { label: 'Period', value: `${years} Years` }
+            ]}
+            outputs={[
+              { label: 'Total Withdrawn', value: totalWithdrawn },
+              { label: 'Remaining Corpus', value: Math.max(0, finalValue) },
+              { label: 'Investment', value: corpus }
+            ]}
+          />
         </>
       )}
       <CalculatorInfoSections calcKey="swp" />
