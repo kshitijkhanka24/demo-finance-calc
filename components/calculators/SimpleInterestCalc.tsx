@@ -11,6 +11,7 @@ export function SimpleInterestCalc() {
   const [months, setMonths] = useState(12)
   const [calculated, setCalculated] = useState(true)
   const [calcKey, setCalcKey] = useState(0)
+  const [submittedMonths, setSubmittedMonths] = useState(0)
   const [inflationEnabled, setInflationEnabled] = useState(false)
   const [inflationRate, setInflationRate] = useState(6)
 
@@ -24,10 +25,17 @@ export function SimpleInterestCalc() {
   const handleCalculate = () => {
     setCalculated(true)
     setCalcKey(k => k + 1)
+    setSubmittedMonths(months)
     logCalculation({ principal, rate, months, inflationRate: inflationEnabled ? inflationRate : undefined })
   }
 
-  const adjustedTotal = useMemo(() => calculated && inflationEnabled ? calculateInflationAdjusted(total, inflationRate, months / 12) : total, [calculated, inflationEnabled, inflationRate, months, total])
+  const adjustedTotal = useMemo(
+    () => (calculated && inflationEnabled && submittedMonths > 0)
+      ? calculateInflationAdjusted(total, inflationRate, submittedMonths / 12)
+      : total,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [calculated, inflationEnabled, inflationRate, submittedMonths, total]
+  )
 
   const pieData = [{ name: 'Principal', value: principal }, { name: 'Interest', value: interest }]
 
@@ -45,7 +53,7 @@ export function SimpleInterestCalc() {
       </div>
       {calculated && (
         <>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <StatCard label="Principal" value={principal} />
             <StatCard label="Interest" value={interest} accent="secondary" />
             <StatCard label={inflationEnabled ? "Total" : "Total"} value={total} accent="primary" />

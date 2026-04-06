@@ -2,7 +2,7 @@
 
 'use client'
 
-import { useState, useCallback, ReactNode } from 'react'
+import { useState, useCallback, useEffect, ReactNode } from 'react'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend, AreaChart, Area, XAxis, YAxis, CartesianGrid } from 'recharts'
 import { ChevronDown, ChevronRight, Download, Calculator } from 'lucide-react'
 import { generatePDFReport } from '@/lib/pdf-report'
@@ -249,7 +249,9 @@ export function ChartSection({ pieData, detailedData, areaData, areaDataKey, gra
   )
 }
 
-// ─── Table with Download ───
+// ─── Table with Download and Pagination ───
+const PAGE_SIZE = 10
+
 export function DataTable({ columns, rows, filename, inputs, outputs, calcKey, chartId }: {
   columns: string[]
   rows: (string | number)[][]
@@ -260,7 +262,18 @@ export function DataTable({ columns, rows, filename, inputs, outputs, calcKey, c
   chartId?: string
 }) {
   const [isDownloading, setIsDownloading] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
 
+  // Reset page when rows change
+  useEffect(() => { setCurrentPage(1) }, [rows.length])
+
+  const paginate = rows.length > PAGE_SIZE
+  const totalPages = Math.ceil(rows.length / PAGE_SIZE)
+  const displayRows = paginate
+    ? rows.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
+    : rows
+
+  // PDF always gets the full dataset, not the paginated view
   const download = useCallback(async () => {
     if (inputs && outputs && calcKey) {
       setIsDownloading(true)
@@ -270,7 +283,6 @@ export function DataTable({ columns, rows, filename, inputs, outputs, calcKey, c
         setIsDownloading(false)
       }
     } else {
-      // Fallback CSV download if props are missing
       const csv = [columns.join(','), ...rows.map(r => r.join(','))].join('\n')
       const blob = new Blob([csv], { type: 'text/csv' })
       const url = URL.createObjectURL(blob)
@@ -283,7 +295,9 @@ export function DataTable({ columns, rows, filename, inputs, outputs, calcKey, c
   return (
     <div className="glass-card overflow-hidden">
       <div className="flex items-center justify-between px-5 py-3 border-b" style={{ borderColor: 'var(--card-border)' }}>
-        <h3 className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--fg-subtle)' }}>Schedule</h3>
+        <h3 className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--fg-subtle)' }}>
+          Schedule {paginate && <span style={{ color: 'var(--fg-subtle)', fontWeight: 400 }}>({rows.length} rows)</span>}
+        </h3>
         <button onClick={download} disabled={isDownloading} className="flex items-center gap-1.5 text-xs font-medium transition-colors" style={{ color: 'var(--accent)', opacity: isDownloading ? 0.7 : 1 }}>
           <Download className="w-3 h-3" /> {isDownloading ? 'Generating...' : (calcKey ? 'Download Report (PDF)' : 'Download CSV')}
         </button>
@@ -298,7 +312,7 @@ export function DataTable({ columns, rows, filename, inputs, outputs, calcKey, c
             </tr>
           </thead>
           <tbody>
-            {rows.map((r, i) => (
+            {displayRows.map((r, i) => (
               <tr key={i} className="border-b transition-colors" style={{ borderColor: 'var(--card-border)' }}
                 onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--glass-hover)')}
                 onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
@@ -311,6 +325,74 @@ export function DataTable({ columns, rows, filename, inputs, outputs, calcKey, c
           </tbody>
         </table>
       </div>
+      {/* Pagination controls — only shown when > PAGE_SIZE rows */}
+      {paginate && (
+        <div className="flex items-center justify-between px-5 py-3 border-t" style={{ borderColor: 'var(--card-border)' }}>
+          <span className="text-xs" style={{ color: 'var(--fg-subtle)' }}>
+            Page {currentPage} of {totalPages}
+          </span>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setCurrentPage(1)}
+              disabled={currentPage === 1}
+              className="px-2 py-1 text-xs rounded-md disabled:opacity-30 transition-colors"
+              style={{ color: 'var(--fg-muted)', background: currentPage === 1 ? 'transparent' : 'var(--card-bg)' }}
+            >
+              «
+            </button>
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="px-2 py-1 text-xs rounded-md disabled:opacity-30 transition-colors"
+              style={{ color: 'var(--fg-muted)', background: currentPage === 1 ? 'transparent' : 'var(--card-bg)' }}
+            >
+              ‹
+            </button>
+            {/* Page number buttons */}
+            {Array.from({ length: Math.min(5, totalPages) }, (_, idx) => {
+              let page: number
+              if (totalPages <= 5) {
+                page = idx + 1
+              } else if (currentPage <= 3) {
+                page = idx + 1
+              } else if (currentPage >= totalPages - 2) {
+                page = totalPages - 4 + idx
+              } else {
+                page = currentPage - 2 + idx
+              }
+              return (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className="w-7 h-7 text-xs rounded-md transition-colors font-medium"
+                  style={{
+                    background: currentPage === page ? 'var(--accent)' : 'var(--card-bg)',
+                    color: currentPage === page ? 'var(--accent-fg)' : 'var(--fg-muted)',
+                  }}
+                >
+                  {page}
+                </button>
+              )
+            })}
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="px-2 py-1 text-xs rounded-md disabled:opacity-30 transition-colors"
+              style={{ color: 'var(--fg-muted)', background: currentPage === totalPages ? 'transparent' : 'var(--card-bg)' }}
+            >
+              ›
+            </button>
+            <button
+              onClick={() => setCurrentPage(totalPages)}
+              disabled={currentPage === totalPages}
+              className="px-2 py-1 text-xs rounded-md disabled:opacity-30 transition-colors"
+              style={{ color: 'var(--fg-muted)', background: currentPage === totalPages ? 'transparent' : 'var(--card-bg)' }}
+            >
+              »
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

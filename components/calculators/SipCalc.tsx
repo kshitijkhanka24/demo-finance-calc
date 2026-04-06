@@ -12,6 +12,7 @@ export function SipCalc() {
   const [years, setYears] = useState(10)
   const [calculated, setCalculated] = useState(true)
   const [calcKey, setCalcKey] = useState(0)
+  const [submittedYears, setSubmittedYears] = useState(0)
   const [inflationEnabled, setInflationEnabled] = useState(false)
   const [inflationRate, setInflationRate] = useState(6)
 
@@ -40,10 +41,20 @@ export function SipCalc() {
   const handleCalculate = () => {
     setCalculated(true)
     setCalcKey(k => k + 1)
+    setSubmittedYears(years)
     logCalculation({ mode, investment, rate, years, inflationRate: inflationEnabled ? inflationRate : undefined })
   }
 
-  const adjustedMaturity = useMemo(() => calculated && inflationEnabled ? calculateInflationAdjusted(maturity, inflationRate, years) : maturity, [calculated, inflationEnabled, inflationRate, years, maturity])
+  const adjustedMaturity = useMemo(
+    () => (calculated && inflationEnabled && submittedYears > 0)
+      ? calculateInflationAdjusted(maturity, inflationRate, submittedYears)
+      : maturity,
+    // NOTE: intentionally use submittedYears (not live `years`) so inflation is computed
+    // against the period that was actually calculated, not the current slider position.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [calculated, inflationEnabled, inflationRate, submittedYears, maturity]
+  )
+
 
   const pieData = [{ name: 'Invested', value: totalInvested }, { name: 'Returns', value: totalReturns }]
 
@@ -65,7 +76,7 @@ export function SipCalc() {
       </div>
       {calculated && (
         <>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <StatCard label="Invested" value={totalInvested} />
             <StatCard label="Returns" value={totalReturns} accent="secondary" />
             <StatCard label={inflationEnabled ? "Total" : "Total"} value={maturity} accent="primary" />

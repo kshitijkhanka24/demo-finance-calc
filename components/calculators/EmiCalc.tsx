@@ -51,7 +51,7 @@ export function EmiCalc() {
       </div>
       {calculated && (
         <>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <StatCard label="Monthly EMI" value={emi} />
             <StatCard label="Total Interest" value={totalInterest} accent="secondary" />
             <StatCard label="Total Payment" value={totalPayment} accent="primary" />

@@ -63,7 +63,7 @@ export function SsyCalc() {
       </div>
       {calculated && (
         <>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
             <StatCard label="Invested" value={totalInvested} />
             <StatCard label="Interest" value={interest} accent="secondary" />
             <StatCard label="Maturity (Year 21)" value={maturityAt21} accent="primary" />

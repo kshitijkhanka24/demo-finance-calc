@@ -4,12 +4,14 @@ import { createContext, useContext, useEffect, useState, ReactNode, useCallback 
 import { supabase } from '@/lib/supabase'
 import type { User, Session } from '@supabase/supabase-js'
 
-export type UserRole = 'user' | 'admin' | 'superadmin'
+export type UserRole = 'user' | 'paid-user' | 'admin' | 'superadmin'
 
 export interface Profile {
   id: string
   email: string
   role: UserRole
+  full_name?: string
+  avatar_url?: string
   created_at: string
   updated_at: string
 }
@@ -24,6 +26,7 @@ interface AuthContextType {
   signOut: () => Promise<void>
   isAdmin: boolean
   isSuperAdmin: boolean
+  isPaidUser: boolean
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -36,6 +39,7 @@ const AuthContext = createContext<AuthContextType>({
   signOut: async () => {},
   isAdmin: false,
   isSuperAdmin: false,
+  isPaidUser: false,
 })
 
 export function useAuth() {
@@ -103,17 +107,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [fetchProfile])
 
-  const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    return { error: error?.message ?? null }
+  // signIn calls the secure backend API route
+  const signIn = async (email: string, password: string): Promise<{ error: string | null }> => {
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+        credentials: 'include',
+      })
+      const data = await res.json()
+      if (!res.ok) return { error: data.error ?? 'Login failed' }
+
+      // After server auth, re-sync the client session from Supabase's stored cookie
+      await supabase.auth.refreshSession()
+      return { error: null }
+    } catch {
+      return { error: 'Network error. Please check your connection.' }
+    }
   }
 
-  const signUp = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({ email, password })
-    return { error: error?.message ?? null }
+  // signUp calls the secure backend API route with server-side validation
+  const signUp = async (email: string, password: string): Promise<{ error: string | null }> => {
+    try {
+      const res = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, confirmPassword: password }),
+        credentials: 'include',
+      })
+      const data = await res.json()
+      if (!res.ok) return { error: data.error ?? 'Signup failed' }
+      return { error: null }
+    } catch {
+      return { error: 'Network error. Please check your connection.' }
+    }
   }
 
   const signOut = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
+    } catch {
+      // Ignore fetch errors, still clear client state
+    }
     await supabase.auth.signOut()
     setUser(null)
     setProfile(null)
@@ -122,9 +158,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const isAdmin = profile?.role === 'admin' || profile?.role === 'superadmin'
   const isSuperAdmin = profile?.role === 'superadmin'
+  const isPaidUser = profile?.role === 'paid-user' || isAdmin
 
   return (
-    <AuthContext.Provider value={{ user, profile, session, loading, signIn, signUp, signOut, isAdmin, isSuperAdmin }}>
+    <AuthContext.Provider value={{ user, profile, session, loading, signIn, signUp, signOut, isAdmin, isSuperAdmin, isPaidUser }}>
       {children}
     </AuthContext.Provider>
   )

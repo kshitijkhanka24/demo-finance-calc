@@ -77,7 +77,7 @@ export function FlatVsReducingCalc() {
             <div className="space-y-3">
               <h3 className="text-xs font-semibold uppercase tracking-wider px-1" style={{ color: 'var(--fg-subtle)' }}>Flat Rate</h3>
               <ChartSection pieData={flatPie} detailedData={flatDetailedData} gradientId="flatGrad" areaLabel="Flat Rate — Year-on-Year" />
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <StatCard label="EMI" value={flatEmi} />
                 <StatCard label="Interest" value={flatInterest} accent="secondary" />
                 <StatCard label="Total" value={flatTotal} />
@@ -86,7 +86,7 @@ export function FlatVsReducingCalc() {
             <div className="space-y-3">
               <h3 className="text-xs font-semibold uppercase tracking-wider px-1" style={{ color: 'var(--fg-subtle)' }}>Reducing Balance</h3>
               <ChartSection pieData={reducingPie} detailedData={reducingDetailedData} gradientId="redGrad" areaLabel="Reducing — Year-on-Year" />
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <StatCard label="EMI" value={reducingEmi} />
                 <StatCard label="Interest" value={reducingInterest} accent="secondary" />
                 <StatCard label="Total" value={reducingTotal} />

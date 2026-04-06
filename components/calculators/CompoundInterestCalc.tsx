@@ -14,6 +14,7 @@ export function CompoundInterestCalc() {
   const [compFreq, setCompFreq] = useState(1)
   const [calculated, setCalculated] = useState(true)
   const [calcKey, setCalcKey] = useState(0)
+  const [submittedYears, setSubmittedYears] = useState(0)
   const [inflationEnabled, setInflationEnabled] = useState(false)
   const [inflationRate, setInflationRate] = useState(6)
 
@@ -36,10 +37,18 @@ export function CompoundInterestCalc() {
   const handleCalculate = () => {
     setCalculated(true)
     setCalcKey(k => k + 1)
+    setSubmittedYears(years)
     logCalculation({ principal, rate, years, compFreq, inflationRate: inflationEnabled ? inflationRate : undefined })
   }
 
-  const adjustedAmount = useMemo(() => calculated && inflationEnabled ? calculateInflationAdjusted(totalAmount, inflationRate, years) : totalAmount, [calculated, inflationEnabled, inflationRate, years, totalAmount])
+  const adjustedAmount = useMemo(
+    () => (calculated && inflationEnabled && submittedYears > 0)
+      ? calculateInflationAdjusted(totalAmount, inflationRate, submittedYears)
+      : totalAmount,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [calculated, inflationEnabled, inflationRate, submittedYears, totalAmount]
+  )
+
 
   const pieData = [{ name: 'Principal', value: principal }, { name: 'Interest', value: totalInterest }]
 
@@ -64,7 +73,7 @@ export function CompoundInterestCalc() {
 
       {calculated && (
         <>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <StatCard label="Principal" value={principal} />
             <StatCard label="Interest Earned" value={totalInterest} accent="secondary" />
             <StatCard label={inflationEnabled ? "Total" : "Total Amount"} value={totalAmount} accent="primary" />

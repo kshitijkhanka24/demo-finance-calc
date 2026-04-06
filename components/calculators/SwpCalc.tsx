@@ -52,7 +52,7 @@ export function SwpCalc() {
       </div>
       {calculated && (
         <>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <StatCard label="Total Withdrawn" value={totalWithdrawn} prefix="₹" />
             <StatCard label="Remaining Corpus" value={Math.max(0, finalValue)} accent="primary" />
             <StatCard label="Investment" value={corpus} />

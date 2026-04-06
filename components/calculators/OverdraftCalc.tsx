@@ -50,7 +50,7 @@ export function OverdraftCalc() {
       </div>
       {calculated && (
         <>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <StatCard label="Principal" value={amount} />
             <StatCard label="Interest" value={totalInterest} accent="secondary" />
             <StatCard label="Total Payable" value={totalPayable} accent="primary" />

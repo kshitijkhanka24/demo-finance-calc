@@ -4,25 +4,43 @@ import { useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 
 /**
- * Hook for calculator button-triggered computation + Supabase monitoring.
- * Call `logCalculation` when the Calculate button is clicked.
+ * Hook for logging calculator usage to Supabase for admin analytics.
+ * Sends calculator_id, user_id (if authenticated), and parameters.
+ * Fires-and-forgets — errors are logged but never thrown.
  */
 export function useCalculation(calculatorId: string) {
-  const logCalculation = useCallback(async (parameters?: Record<string, any>) => {
-    try {
-      await supabase
-        .from('calculator_usage')
-        .insert([
+  const logCalculation = useCallback(
+    async (parameters?: Record<string, unknown>) => {
+      try {
+        // Get current user session (null for anonymous users)
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
+
+        await supabase.from('calculator_usage').insert([
           {
             calculator_id: calculatorId,
+            user_id: user?.id ?? null,
             timestamp: new Date().toISOString(),
-            parameters: parameters ? JSON.stringify(parameters) : null,
-          }
+            // Sanitize parameters — only keep serializable primitives
+            parameters: parameters
+              ? JSON.stringify(
+                  Object.fromEntries(
+                    Object.entries(parameters).filter(
+                      ([, v]) => typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean'
+                    )
+                  )
+                )
+              : null,
+          },
         ])
-    } catch (error) {
-      console.error('Failed to log calculator usage:', error)
-    }
-  }, [calculatorId])
+      } catch (error) {
+        // Never let analytics failures surface to the user
+        console.error('[useCalculation] Failed to log usage:', error)
+      }
+    },
+    [calculatorId]
+  )
 
   return { logCalculation }
 }

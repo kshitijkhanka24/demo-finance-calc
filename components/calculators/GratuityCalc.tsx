@@ -41,7 +41,7 @@ export function GratuityCalc() {
       </div>
       {calculated && (
         <>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <StatCard label="Monthly Salary" value={salary} />
             <StatCard label="Gratuity" value={gratuity} accent="primary" />
           </div>

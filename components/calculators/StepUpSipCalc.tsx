@@ -12,6 +12,7 @@ export function StepUpSipCalc() {
   const [years, setYears] = useState(15)
   const [calculated, setCalculated] = useState(true)
   const [calcKey, setCalcKey] = useState(0)
+  const [submittedYears, setSubmittedYears] = useState(0)
   const [inflationEnabled, setInflationEnabled] = useState(false)
   const [inflationRate, setInflationRate] = useState(6)
 
@@ -31,10 +32,18 @@ export function StepUpSipCalc() {
   const handleCalculate = () => {
     setCalculated(true)
     setCalcKey(k => k + 1)
+    setSubmittedYears(years)
     logCalculation({ monthlySip, annualIncrease, rate, years, inflationRate: inflationEnabled ? inflationRate : undefined })
   }
 
-  const adjustedMaturity = useMemo(() => calculated && inflationEnabled ? calculateInflationAdjusted(maturity, inflationRate, years) : maturity, [calculated, inflationEnabled, inflationRate, years, maturity])
+  const adjustedMaturity = useMemo(
+    () => (calculated && inflationEnabled && submittedYears > 0)
+      ? calculateInflationAdjusted(maturity, inflationRate, submittedYears)
+      : maturity,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [calculated, inflationEnabled, inflationRate, submittedYears, maturity]
+  )
+
 
   const pieData = [{ name: 'Invested', value: totalInvested }, { name: 'Returns', value: maturity - totalInvested }]
 
@@ -53,7 +62,7 @@ export function StepUpSipCalc() {
       </div>
       {calculated && (
         <>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <StatCard label="Invested" value={totalInvested} />
             <StatCard label="Wealth Gained" value={maturity - totalInvested} accent="secondary" />
             <StatCard label={inflationEnabled ? "Total Value" : "Total Value"} value={maturity} accent="primary" />
