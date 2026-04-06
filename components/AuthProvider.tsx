@@ -107,20 +107,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [fetchProfile])
 
-  // signIn calls the secure backend API route
+  // signIn directly via Supabase client so onAuthStateChange fires correctly
+  // Using the server API route broke session sync between SSR and browser SDKs
   const signIn = async (email: string, password: string): Promise<{ error: string | null }> => {
     try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-        credentials: 'include',
+      const trimmedEmail = email.trim().toLowerCase()
+      const { error } = await supabase.auth.signInWithPassword({
+        email: trimmedEmail,
+        password,
       })
-      const data = await res.json()
-      if (!res.ok) return { error: data.error ?? 'Login failed' }
-
-      // After server auth, re-sync the client session from Supabase's stored cookie
-      await supabase.auth.refreshSession()
+      if (error) {
+        // Generic message to prevent user enumeration
+        return { error: 'Invalid email or password.' }
+      }
       return { error: null }
     } catch {
       return { error: 'Network error. Please check your connection.' }
