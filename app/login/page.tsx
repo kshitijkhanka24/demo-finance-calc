@@ -17,11 +17,21 @@ export default function LoginPage() {
 
   // Redirect if already logged in
   useEffect(() => {
-    if (!loading && user && profile) {
-      if (profile.role === 'admin' || profile.role === 'superadmin') {
-        router.push('/admin/dashboard')
+    if (!loading && user) {
+      // If profile is still loading, we might wait a bit, 
+      // but if user exists we should eventually move away from login
+      if (profile) {
+        if (profile.role === 'admin' || profile.role === 'superadmin') {
+          router.push('/admin/dashboard')
+        } else {
+          router.push('/')
+        }
       } else {
-        router.push('/')
+        // Fallback redirect if profile is missing after a few seconds
+        const timer = setTimeout(() => {
+          router.push('/')
+        }, 3000)
+        return () => clearTimeout(timer)
       }
     }
   }, [user, profile, loading, router])
@@ -35,8 +45,11 @@ export default function LoginPage() {
     if (err) {
       setError(err)
       setSubmitting(false)
+    } else {
+      // Small delay to allow AuthProvider to sync, but reset submitting just in case
+      // The redirect will happen via useEffect
+      setTimeout(() => setSubmitting(false), 2000)
     }
-    // Redirect is handled by useEffect above
   }
 
   if (loading) {
